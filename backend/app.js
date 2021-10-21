@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const User = require('./models/user')
 const Db = require('./db');
 const cookieParser = require('cookie-parser');
+const Chat = require('./models/chat');
+const Message = require('./models/message');
 
 const app = express();
 const db = new Db();
@@ -79,6 +81,19 @@ app.post('/login', async (req, res) => {
     catch (err) {
         res.status(400).send(err.message);
     }
+})
+
+app.post('/chat', requireAuth, async (req, res) => {
+    const { getterUsername } = req.body;
+    const getterUser = await User.findOne({ username: getterUsername });
+    if (getterUser) {
+        const chat = await Chat.create({ members: [req.userId, getterUser._id], messgaes: [] });
+        res.json({ "created": "yayy" });
+    }
+    else {
+        res.json("noooooo")
+    }
+
 })
 
 app.listen(3000, () => {
