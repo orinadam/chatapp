@@ -96,6 +96,59 @@ app.post('/chat', requireAuth, async (req, res) => {
 
 })
 
+app.get('/chats', requireAuth, async (req, res) => {
+    const chats = await Chat.find({"members":req.userId}).populate("members");
+    const filteredChats = chats.map(chat => {
+        const user = chat.members.filter(member => member._id != req.userId)[0];
+        return {
+            id: chat._id,
+            user: { "id": user._id, "username": user.username}
+        }
+    }
+    )
+    res.send(filteredChats)
+})
+
+app.get('/chats/:id', requireAuth, async (req, res) => {
+    const chat = await Chat.findById(req.params.id).populate("members").populate("messages");
+    const user = chat.members.filter(member => member._id != req.userId)[0];
+    res.send({"id": chat._id, "username" : user.username, "messages" : chat.messages });
+})
+
+app.post('/chats/:id/messages', requireAuth, async (req, res) => {
+    if(req.body.text && req.body.text !== "") {
+        const message = new Message({sender: req.userId, text: req.body.text, date: new Date(), seen: false});
+        const chat = await Chat.findById(req.params.id);
+        chat.messages.push(message);
+        chat.save();
+        message.save();
+        res.send(message);
+    }
+    else {
+        res.send("cant send empty message");
+    }
+
+})
+
+app.delete('/chats/:id/messages/:messageId', requireAuth, async (req, res) => {
+    const { id, messageId } = req.params;
+    const chat = await Chat.findByIdAndUpdate(id, { $pull: { messages: messageId } });
+    const message = await Message.findByIdAndDelete(messageId);
+    if(!chat){
+        res.send("no such chat")
+    }
+    else if(!message){
+        res.send("no such message")
+    }
+    else{
+        res.send('worked')
+    }
+    
+    
+})
+
+
+
 app.listen(3000, () => {
     console.log('Listening')
 })
