@@ -6,13 +6,15 @@ const cookieParser = require("cookie-parser");
 const Chat = require("./models/chat");
 const Message = require("./models/message");
 const multer = require("multer");
-const upload = multer({ dest: "backend/static/profile_photos/" });
+const upload = multer({ dest: "backend/public/static/profile_photos/" });
+const path = require("path");
 
 const app = express();
 const db = new Db();
 
 app.use(express.json());
 app.use(cookieParser());
+app.use("/static", express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
   req.db = db;
@@ -171,9 +173,17 @@ app.delete("/chats/:id", requireAuth, async (req, res) => {
   res.send("Successfully deleted!");
 });
 
-app.post("/profilephoto", upload.single("avatar"), async (req, res) => {
-  res.send("Profile picture uploaded");
-});
+app.post(
+  "/profilephoto",
+  requireAuth,
+  upload.single("avatar"),
+  async (req, res) => {
+    await User.findByIdAndUpdate(req.userId, {
+      profilePhoto: req.file.filename,
+    });
+    res.send("Profile picture uploaded");
+  }
+);
 
 app.listen(5000, () => {
   console.log("Listening");
