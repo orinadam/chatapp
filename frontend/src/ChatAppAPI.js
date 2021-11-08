@@ -7,14 +7,14 @@ axios.defaults.withCredentials = true;
 const bodyResp = (resp) => resp.data;
 
 const requests = {
-  get: (url) => axios.get(url).then(Bodyresp),
+  get: (url) => axios.get(url).then(bodyResp),
   post: (url, body) => axios.post(url, body).then(bodyResp),
   delete: (url) => axios.delete(url).then(bodyResp),
 };
 
 const auth = {
-  login: (url, body) => requests("/login"),
-  signup: (url, body) => requests("/signup"),
+  login: (url, body) => requests.post("/login"),
+  signup: (url, body) => requests.post("/signup"),
 };
 
 export default auth;

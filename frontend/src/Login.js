@@ -13,9 +13,18 @@ import {
 } from "@chakra-ui/react";
 
 import { useState } from "react";
+import auth from "./ChatAppAPI"
 
 const Login = () => {
-  const submiForm = (e) => {};
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const submitForm = async (e) => {
+    alert(username + password)
+    const resp = await auth.login("/login", {username: username, password: password});
+    alert(resp)
+
+  };
   return (
     <ChakraProvider>
       <Flex height="100vh" alignItems="center" justifyContent="center">
@@ -29,8 +38,8 @@ const Login = () => {
         >
           <Heading mb={10}>Login</Heading>
           <FormControl isInvalid={false}>
-            <Input placeholder="Username" variant="filled" mb={10} />
-            <Input placeholder="Password" variant="filled" mb={10} />
+            <Input placeholder="Username" variant="filled" mb={10} onChange={(e) => {setUsername(e.target.value)}} />
+            <Input placeholder="Password" variant="filled" mb={10} onChange={(e) => {setPassword(e.target.value)}} />
           </FormControl>
           {false && (
             <Alert status="error" mb={7}>
@@ -38,7 +47,7 @@ const Login = () => {
               <AlertTitle mr={2}>Invalid username or password</AlertTitle>
             </Alert>
           )}
-          <Button colorScheme="teal" onClick={submit}>
+          <Button colorScheme="teal" onClick={submitForm}>
             Login
           </Button>
         </Flex>
