@@ -2,7 +2,9 @@ import axios from "axios";
 
 axios.defaults.baseURL = "http://localhost:5000";
 axios.defaults.headers.post["Content-Type"] = "application/json";
+
 axios.defaults.withCredentials = true;
+
 
 const bodyResp = (resp) => resp.data;
 
@@ -13,8 +15,8 @@ const requests = {
 };
 
 const auth = {
-  login: (url, body) => requests.post("/login"),
-  signup: (url, body) => requests.post("/signup"),
+  login: (url, body) => requests.post("/login", body),
+  signup: (url, body) => requests.post("/signup", body),
 };
 
 export default auth;

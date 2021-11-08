@@ -8,12 +8,15 @@ const Message = require("./models/message");
 const multer = require("multer");
 const upload = multer({ dest: "backend/public/static/profile_photos/" });
 const path = require("path");
+var cors = require('cors')
 
 const app = express();
 const db = new Db();
 
+app.use(cors({ origin: "http://localhost:3000", credentials: true, }));
 app.use(express.json());
 app.use(cookieParser());
+
 app.use("/static", express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
@@ -66,10 +69,10 @@ app.post("/signup", async (req, res) => {
     const user = await User.create({ username, password });
     const token = createToken(user._id);
     res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
-    res.json({ user: user._id });
+    res.json({ success: { user: user._id } });
   } catch (err) {
-    console.log(err);
-    res.status(400).send(err);
+    if (err.code && err.code === 11000) res.status(400).json({ error: "User already exists" });
+    res.status(400).send({ error: "An error occured" });
   }
 });
 
@@ -79,9 +82,9 @@ app.post("/login", async (req, res) => {
     const user = await User.login(username, password);
     const token = createToken(user._id);
     res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
-    res.json({ user: user._id });
+    res.json({ success: { user: user._id } });
   } catch (err) {
-    res.status(400).send(err.message);
+    res.status(400).json({ error: err.message });
   }
 });
 
@@ -93,9 +96,9 @@ app.post("/chat", requireAuth, async (req, res) => {
       members: [req.userId, getterUser._id],
       messgaes: [],
     });
-    res.json({ created: "yayy" });
+    res.json({ success: true });
   } else {
-    res.json("noooooo");
+    res.status(400).json({ error: "Failed to create a new chat" });
   }
 });
 
@@ -108,15 +111,19 @@ app.get("/chats", requireAuth, async (req, res) => {
       user: { id: user._id, username: user.username },
     };
   });
-  res.send(filteredChats);
+  res.json({ success: filteredChats });
 });
 
 app.get("/chats/:id", requireAuth, async (req, res) => {
-  const chat = await Chat.findById(req.params.id)
-    .populate("members")
-    .populate("messages");
-  const user = chat.members.filter((member) => member._id != req.userId)[0];
-  res.send({ id: chat._id, username: user.username, messages: chat.messages });
+  try {
+    const chat = await Chat.findById(req.params.id)
+      .populate("members")
+      .populate("messages");
+    const user = chat.members.filter((member) => member._id != req.userId)[0];
+    res.json({ success: { id: chat._id, username: user.username, messages: chat.messages } });
+  } catch (e) {
+    res.status(400).json({ error: "No such chat" });
+  }
 });
 
 app.post("/chats/:id/messages", requireAuth, async (req, res) => {

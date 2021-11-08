@@ -14,16 +14,24 @@ import {
 
 import { useState } from "react";
 import auth from "./ChatAppAPI"
+// import axios from "axios"
+// axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 
 const Login = () => {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(false);
   const submitForm = async (e) => {
-    alert(username + password)
-    const resp = await auth.login("/login", {username: username, password: password});
-    alert(resp)
-
+    try {
+      //const resp1 = await axios.post('http://localhost:5000/login', { username, password });
+      const resp = await auth.login('/login', { username, password })
+      console.log(resp.success)
+      setError(false);
+    } catch (e) {
+      setError(true);
+      console.log(e.response.data.error)
+    }
   };
   return (
     <ChakraProvider>
@@ -37,11 +45,11 @@ const Login = () => {
           rounded={8}
         >
           <Heading mb={10}>Login</Heading>
-          <FormControl isInvalid={false}>
-            <Input placeholder="Username" variant="filled" mb={10} onChange={(e) => {setUsername(e.target.value)}} />
-            <Input placeholder="Password" variant="filled" mb={10} onChange={(e) => {setPassword(e.target.value)}} />
+          <FormControl isInvalid={error}>
+            <Input placeholder="Username" variant="filled" mb={10} onChange={(e) => { setUsername(e.target.value) }} />
+            <Input placeholder="Password" variant="filled" mb={10} onChange={(e) => { setPassword(e.target.value) }} />
           </FormControl>
-          {false && (
+          {error && (
             <Alert status="error" mb={7}>
               <AlertIcon />
               <AlertTitle mr={2}>Invalid username or password</AlertTitle>
