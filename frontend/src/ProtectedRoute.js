@@ -4,6 +4,7 @@ import { useCookies } from 'react-cookie';
 import { ColorModeScript } from "@chakra-ui/react";
 
 function ProtectedRoute({ component: Component, ...restOfProps }) {
+    const token = "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"
     const [cookies, setCookie, removeCookie] = useCookies(['jwt']);
     if(cookies.jwt && cookies.jwt !== ""){
       try{
