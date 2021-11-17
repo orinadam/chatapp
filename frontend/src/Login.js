@@ -12,29 +12,36 @@ import {
   FormControl,
 } from "@chakra-ui/react";
 
+import { useRecoilState, useRecoilCallback } from "recoil";
+
 import { useState } from "react";
 import { auth } from "./ChatAppAPI"
+import { chatMessgesState, selectedUser, connectedUser } from "./store";
 // import axios from "axios"
 // axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
+import { useHistory } from 'react-router-dom'
 
 const Login = () => {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(false);
-  const submitForm = async (e) => {
+  const [user, setUser] = useRecoilState(connectedUser);
+  const history = useHistory();
+  const submitForm = useRecoilCallback( ({set}) => async () => {
     try {
-      //const resp1 = await axios.post('http://localhost:5000/login', { username, password });
       const resp = await auth.login('/login', { username, password })
       console.log(resp.success)
       setError(false);
+      set(connectedUser, {userId: resp.success.user.id, profilePhoto: resp.success.user.profilePhoto, username: resp.success.user.username});
+      history.push('/chats');
+
+
     } catch (e) {
       setError(true);
-      console.log(e.response.data.error)
     }
-  };
+  });
   return (
-    <ChakraProvider>
       <Flex height="100vh" alignItems="center" justifyContent="center">
         <Flex
           direction="column"
@@ -60,7 +67,6 @@ const Login = () => {
           </Button>
         </Flex>
       </Flex>
-    </ChakraProvider>
   );
 };
 

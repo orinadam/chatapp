@@ -81,8 +81,8 @@ app.post("/login", async (req, res) => {
   try {
     const user = await User.login(username, password);
     const token = createToken(user._id);
-    res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
-    res.json({ success: { user: user._id } });
+    res.cookie("jwt", token, { httpOnly: false, maxAge: maxAge * 1000 });
+    res.json({ success: { user: {username: user.username, profilePhoto: user.profilePhoto, id: user.id}} });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
