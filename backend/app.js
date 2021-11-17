@@ -91,7 +91,7 @@ app.post("/login", async (req, res) => {
 app.post("/chat", requireAuth, async (req, res) => {
   const { getterUsername } = req.body;
   const getterUser = await User.findOne({ username: getterUsername });
-  if (getterUser) {
+  if (getterUser && getterUser._id != req.userId) {
     const chat = await Chat.create({
       members: [req.userId, getterUser._id],
       messgaes: [],
@@ -103,12 +103,18 @@ app.post("/chat", requireAuth, async (req, res) => {
 });
 
 app.get("/chats", requireAuth, async (req, res) => {
-  const chats = await Chat.find({ members: req.userId }).populate("members");
+  let lastMessageContent = ""
+  const chats = await Chat.find({ members: req.userId }).populate("members").populate("messages");
   const filteredChats = chats.map((chat) => {
     const user = chat.members.filter((member) => member._id != req.userId)[0];
+    if(chat.messages && chat.messages.length) {
+      const lastMessage = chat.messages[chat.messages.length - 1];
+      lastMessageContent = `${lastMessage.sender == req.userId ? "You: " : ""}${lastMessage.text}`; 
+    }
+    console.log(user)
     return {
       id: chat._id,
-      user: { id: user._id, username: user.username },
+      user: { id: user._id, username: user.username, photo: user.profilePhoto, lastMessage: lastMessageContent },
     };
   });
   res.json({ success: filteredChats });

@@ -13,7 +13,7 @@ import {
 } from "@chakra-ui/react";
 
 import { useState } from "react";
-import auth from "./ChatAppAPI"
+import { auth } from "./ChatAppAPI"
 // import axios from "axios"
 // axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
 

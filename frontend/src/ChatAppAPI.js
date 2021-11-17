@@ -18,7 +18,7 @@ const auth = {
   signup: (url, body) => requests.post("/signup", body),
 };
 
-const chats = {
+const chatsActions = {
   createChat: (url, body) => requests.post("/chat", body),
   getChats: (url) => requests.get("/chats"),
   getChat: (url, id) => requests.get(`/chats/${id}`),
@@ -29,4 +29,4 @@ const chats = {
   deleteChats: (url, chatId) => requests.delete(`/chats/${chatId}`),
 };
 
-export default auth;
+export {auth, chatsActions};
