@@ -6,9 +6,11 @@ import Chats from "./Chats";
 import { ChakraProvider } from "@chakra-ui/react"
 import {RecoilRoot} from "recoil";
 import ProtectedRoute from "./ProtectedRoute";
+import {CookiesProvider} from "react-cookie"
 
 function App() {
   return (
+    <CookiesProvider>
     <ChakraProvider>
       <RecoilRoot>
         <Route exact path="/login">
@@ -18,6 +20,7 @@ function App() {
         </ProtectedRoute>
       </RecoilRoot>
     </ChakraProvider>
+    </CookiesProvider>
   );
 }
 

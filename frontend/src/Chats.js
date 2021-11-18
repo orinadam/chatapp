@@ -1,4 +1,4 @@
-import { Box, Heading, Text, Flex } from "@chakra-ui/react";
+import { Box, Heading, Text, Flex, Avatar } from "@chakra-ui/react";
 
 import { useState, useEffect } from "react";
 import {chatsActions} from "./ChatAppAPI";
@@ -26,7 +26,11 @@ const Chats = () => {
     <Flex height="100vh" alignItems="start" justifyContent="left" direction="column">
       <Heading mb={3}>ChatApp</Heading>
       <Flex height="100vh" alignItems="start" justifyContent="left" bg="gray.200" overflow="auto" direction="column">
-        <Box>{user.username}</Box>
+        <Box bg="green.300" fontFamily="sans-serif" h={57} width={300} fontSize={30} padding={2} >
+          <Avatar src="./default.png" size="md" marginTop={-1.9} marginRight={2} />
+          {/*{user.username}*/}
+            MAnana
+          </Box>
         {chats.map(chat => {
           return <ChatIcon username= {chat.user.username} lastMessage={chat.user.lastMessage} />
         })}
