@@ -10,7 +10,8 @@ function ProtectedRoute({ component: Component, ...restOfProps }) {
     const [cookies, setCookie, removeCookie] = useCookies(['jwt']);
     if(cookies.jwt && cookies.jwt !== ""){
       try{
-      if(JSON.parse(atob(cookies.jwt.split('.')[1])).exp > Date.now() / 1000) {
+        const parsed = Buffer.from(cookies.jwt.split('.')[1], "base64").toString("utf-8");
+      if(JSON.parse(parsed).exp > Date.now() / 1000) {
         authenticated = true;
         
       } 
