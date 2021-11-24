@@ -61,6 +61,7 @@ const Chats = () => {
       <Flex
         height="100vh"
         alignItems="start"
+        w="25%"
         justifyContent="left"
         bg="gray.200"
         overflow="auto"
@@ -71,7 +72,7 @@ const Chats = () => {
           bg="green.300"
           fontFamily="sans-serif"
           h={57}
-          width={300}
+          width="100%"
           fontSize={30}
           padding={2}
         >
@@ -106,7 +107,7 @@ const Chats = () => {
           );
         })}
       </Flex> 
-      <VStack w="79%">      
+      <VStack w="79%" h="100%">      
       {/*<Flex h={690} bg="gray.200" w="100%" border="3px solid gray.500" borderRadius={10, 0, 0, 0} display="column">
         <HStack w="100%" h="10%" bg="gray.300">
         <Avatar
