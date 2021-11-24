@@ -21,10 +21,10 @@ import ResizeTextarea from "react-textarea-autosize";
 import { chatMessgesState, selectedUser, connectedUser } from "./store";
 import { ReactComponent as Send } from "./send.svg";
 import Message from './Message'
-import {ErrorBoundary} from 'react-error-boundary' 
+import { ErrorBoundary } from 'react-error-boundary'
 import Chat from './Chat';
 
-function ErrorFallback({error, resetErrorBoundary}) {
+function ErrorFallback({ error, resetErrorBoundary }) {
   return (
     <div role="alert">
       <p>Something went wrong:</p>
@@ -96,19 +96,19 @@ const Chats = () => {
         {chats.map((chat) => {
           return (
             <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <Suspense fallback={<div>Loading...</div>}>
-            <ChatIcon
-              chatId={chat.id}
-              username={chat.user.username}
-              lastMessage={chat.user.lastMessage}
-            />
-            </Suspense>
+              <Suspense fallback={<div>Loading...</div>}>
+                <ChatIcon
+                  chatId={chat.id}
+                  username={chat.user.username}
+                  lastMessage={chat.user.lastMessage}
+                />
+              </Suspense>
             </ErrorBoundary>
           );
         })}
-      </Flex> 
-      <VStack w="79%" h="100%">      
-      {/*<Flex h={690} bg="gray.200" w="100%" border="3px solid gray.500" borderRadius={10, 0, 0, 0} display="column">
+      </Flex>
+      <VStack w="79%" h="100%">
+        {/*<Flex h={690} bg="gray.200" w="100%" border="3px solid gray.500" borderRadius={10, 0, 0, 0} display="column">
         <HStack w="100%" h="10%" bg="gray.300">
         <Avatar
             src=""
@@ -149,13 +149,13 @@ const Chats = () => {
 
           </VStack>
       </Flex> */}
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-      <Suspense fallback={<div>Loading...</div>}>
-      {chat &&
-      <Chat />
-}
-      </Suspense>
-      </ErrorBoundary>
+        <ErrorBoundary FallbackComponent={ErrorFallback}>
+          <Suspense fallback={<div>Loading...</div>}>
+            {chat &&
+              <Chat />
+            }
+          </Suspense>
+        </ErrorBoundary>
       </VStack>
     </HStack>
   );

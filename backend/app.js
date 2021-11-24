@@ -8,10 +8,12 @@ const Message = require("./models/message");
 const multer = require("multer");
 const upload = multer({ dest: "backend/public/static/profile_photos/" });
 const path = require("path");
+var Chatter = require('./Chatter');
 var cors = require('cors')
 
 const app = express();
 const db = new Db();
+const chatters = new Map;
 
 app.use(cors({ origin: "http://localhost:3000", credentials: true, }));
 app.use(express.json());
@@ -21,6 +23,11 @@ app.use("/static", express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
   req.db = db;
+  next();
+});
+
+app.use((req, res, next) => {
+  req.chatters = chatters;
   next();
 });
 
@@ -63,6 +70,35 @@ app.get("/", requireAuth, (req, res) => {
   res.json({ user: req.userId });
 });
 
+app.ws("/", (ws, req) => {
+  ws.on("message", (message) => {
+    const parsed = JSON.parse(message);
+    // {op: "IDENTIFY", d: {token: "!@$12124124124"}}
+    switch (parsed.op) {
+      case "IDENTIFY":
+        // token valid?
+        // {op: "ERROR", d: {message: "Invalid creds"}}
+        // send this ^
+        jwt.verify(
+          parsed.d.token,
+          "fkjabcjksIwjbkKVHH72yie2dgJHCV",
+          (err, decodedToken) => {
+            if (err) {
+              console.log(err.message);
+            } else {
+              console.log(decodedToken);
+              const chatter = new Chatter(ws, dataFromToken);
+              chatters.set(dataFromToken.id, chatter);
+              break;
+            }
+          }
+        );
+      // if is valid ->
+      // extract the data the token
+    }
+  });
+});
+
 app.post("/signup", async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -82,7 +118,7 @@ app.post("/login", async (req, res) => {
     const user = await User.login(username, password);
     const token = createToken(user._id);
     res.cookie("jwt", token, { httpOnly: false, maxAge: maxAge * 1000 });
-    res.json({ success: { user: {username: user.username, profilePhoto: user.profilePhoto, id: user.id}} });
+    res.json({ success: { user: { username: user.username, profilePhoto: user.profilePhoto, id: user.id } } });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -107,9 +143,9 @@ app.get("/chats", requireAuth, async (req, res) => {
   const chats = await Chat.find({ members: req.userId }).populate("members").populate("messages");
   const filteredChats = chats.map((chat) => {
     const user = chat.members.filter((member) => member._id != req.userId)[0];
-    if(chat.messages && chat.messages.length) {
+    if (chat.messages && chat.messages.length) {
       const lastMessage = chat.messages[chat.messages.length - 1];
-      lastMessageContent = `${lastMessage.sender == req.userId ? "You: " : ""}${lastMessage.text}`; 
+      lastMessageContent = `${lastMessage.sender == req.userId ? "You: " : ""}${lastMessage.text}`;
     }
     console.log(user)
     return {
@@ -140,9 +176,40 @@ app.post("/chats/:id/messages", requireAuth, async (req, res) => {
       date: new Date(),
       seen: false,
     });
+
     const chat = await Chat.findById(req.params.id);
+    const chatter = req.chatters.get(chat.members.find(s => s.id !== req.userId));
+    if (chatter) {
+      chatter.connection.send({
+        op: "MESSAGE_CREATE",
+        d: {
+          content: messageContent
+        }
+      });
+    }
+
+    // new Map;
+    // req.connectedSockets.get(chat.members.find(s => s.id !== req.userId));
+    // if (_) {
+    //  _.send({
+    //    {op: "MESSAGE_CREATE", d: {content: ""}} 
+    // }) 
+    // }
+
+    /**
+     * 
+     * 
+     * on message:
+     *   switch (_.op) {
+     *      case "MESSAGE_CREATE":
+     *        ...
+     *   }
+     * 
+     */
     chat.messages.push(message);
+
     chat.save();
+
     message.save();
     res.send(message);
   } else {
