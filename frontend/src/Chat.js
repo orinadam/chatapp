@@ -22,6 +22,7 @@ import { useState, useEffect, forwardRef, Suspense, Fragment } from "react";
 import ResizeTextarea from "react-textarea-autosize";
 import { ReactComponent as Send } from "./send.svg";
 import { useCookies } from 'react-cookie';
+import { w3cwebsocket as W3CWebSocket } from "websocket";
 
 function ErrorFallback({ error, resetErrorBoundary }) {
   return (
@@ -39,9 +40,9 @@ const Chat = () => {
   const user = useRecoilValue(connectedUser);
   const chatDesc = useRecoilValue(selectedChat);
   const [message, setMessage] = useState("");
-  const [connection, setConnection] = useState(null);
+  const [connection, setConnection] = useState( new W3CWebSocket("ws://localhost:5000"));
   const [messages, setMessages] = useState([]);
-  setMessages(curr => { return [...curr, chat.success.messages] });
+  //setMessages(curr => { return [...curr, chat.success.messages] });
   /**
    * 
    *  {
@@ -57,28 +58,31 @@ const Chat = () => {
 
 
   useEffect(() => {
-    const connection = new W3CWebsocket("ws://localhost:5000");
-
     connection.onopen = () => {
       setConnection(connection);
 
       // Identify to the websocket server
-      connection.send({
+      connection.send(JSON.stringify({
         op: "IDENTIFY",
         d: {
           token: cookies.jwt
         }
-      })
+      }))
+
     }
 
-    connection.onmessage = (m) => {
-      const parsed = JSON.parse(m);
+  }, []);
 
-      switch (m.op) {
+  connection.onmessage = (m) => {
+      console.log(m.data)
+      const parsed = JSON.parse(m.data);
+      console.log(parsed)
+      
+      switch (parsed.op) {
         case "MESSAGE_CREATE":
           setMessages(currentState => {
 
-            return [...currentState, m.d.content];
+            return [...currentState, parsed.d.message];
           });
 
           break;
@@ -91,8 +95,7 @@ const Chat = () => {
         default:
           console.log("unknown op")
       }
-    }
-  }, []);
+  }
 
   const sendMessage = async () => {
     await chatsActions.sendMessage('', { text: message }, chatDesc.chatId);

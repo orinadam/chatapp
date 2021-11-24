@@ -11,7 +11,11 @@ const path = require("path");
 var Chatter = require('./Chatter');
 var cors = require('cors')
 
+
 const app = express();
+
+var expressWs = require('express-ws')(app);
+
 const db = new Db();
 const chatters = new Map;
 
@@ -42,10 +46,12 @@ const createToken = (id) => {
 const requireAuth = (req, res, next) => {
   const userToken = req.cookies.jwt;
   if (userToken) {
+
     jwt.verify(
       userToken,
       "fkjabcjksIwjbkKVHH72yie2dgJHCV",
       (err, decodedToken) => {
+
         if (err) {
           console.log(err.message);
           res.json({ method: "login inv" });
@@ -54,9 +60,11 @@ const requireAuth = (req, res, next) => {
           req.userId = decodedToken.id;
           next();
         }
+
       }
     );
   } else {
+
     res.json({ method: "login" });
   }
 };
@@ -86,13 +94,13 @@ app.ws("/", (ws, req) => {
             if (err) {
               console.log(err.message);
             } else {
-              console.log(decodedToken);
-              const chatter = new Chatter(ws, dataFromToken);
-              chatters.set(dataFromToken.id, chatter);
-              break;
+              const chatter = new Chatter(ws, decodedToken);
+              console.log("-------", decodedToken, "--------")
+              chatters.set(decodedToken.id, chatter);
             }
           }
         );
+        break;
       // if is valid ->
       // extract the data the token
     }
@@ -104,8 +112,10 @@ app.post("/signup", async (req, res) => {
   try {
     const user = await User.create({ username, password });
     const token = createToken(user._id);
+
     res.cookie("jwt", token, { httpOnly: true, maxAge: maxAge * 1000 });
     res.json({ success: { user: user._id } });
+
   } catch (err) {
     if (err.code && err.code === 11000) res.status(400).json({ error: "User already exists" });
     res.status(400).send({ error: "An error occured" });
@@ -117,8 +127,10 @@ app.post("/login", async (req, res) => {
   try {
     const user = await User.login(username, password);
     const token = createToken(user._id);
+
     res.cookie("jwt", token, { httpOnly: false, maxAge: maxAge * 1000 });
     res.json({ success: { user: { username: user.username, profilePhoto: user.profilePhoto, id: user.id } } });
+  
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -127,11 +139,13 @@ app.post("/login", async (req, res) => {
 app.post("/chat", requireAuth, async (req, res) => {
   const { getterUsername } = req.body;
   const getterUser = await User.findOne({ username: getterUsername });
+
   if (getterUser && getterUser._id != req.userId) {
     const chat = await Chat.create({
       members: [req.userId, getterUser._id],
       messgaes: [],
     });
+
     res.json({ success: true });
   } else {
     res.status(400).json({ error: "Failed to create a new chat" });
@@ -147,7 +161,6 @@ app.get("/chats", requireAuth, async (req, res) => {
       const lastMessage = chat.messages[chat.messages.length - 1];
       lastMessageContent = `${lastMessage.sender == req.userId ? "You: " : ""}${lastMessage.text}`;
     }
-    console.log(user)
     return {
       id: chat._id,
       user: { id: user._id, username: user.username, photo: user.profilePhoto, lastMessage: lastMessageContent },
@@ -176,16 +189,20 @@ app.post("/chats/:id/messages", requireAuth, async (req, res) => {
       date: new Date(),
       seen: false,
     });
-
+    
     const chat = await Chat.findById(req.params.id);
-    const chatter = req.chatters.get(chat.members.find(s => s.id !== req.userId));
+    console.log(req.userId);
+    console.log(req.chatters.size)
+    console.log(chat.members)
+    console.log(chat.members.find(s => s._id !== req.userId))
+    const chatter = req.chatters.get(String(chat.members.find(s => String(s._id) !== req.userId)));
     if (chatter) {
-      chatter.connection.send({
+      chatter.connection.send(JSON.stringify({
         op: "MESSAGE_CREATE",
         d: {
-          content: messageContent
+          message: message
         }
-      });
+      }));
     }
 
     // new Map;
