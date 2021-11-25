@@ -14,11 +14,11 @@ import {
 
 import { chatsActions } from "./ChatAppAPI";
 
-import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
-import { selectedChat, chatMessgesState, connectedUser } from "./store";
+import { constSelector, useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
+import { selectedChat, chatMessgesState, connectedUser, allMessages } from "./store";
 import Message from './Message'
 import { ErrorBoundary } from 'react-error-boundary'
-import { useState, useEffect, forwardRef, Suspense, Fragment } from "react";
+import { useState, useEffect, forwardRef, Suspense, Fragment, useRef } from "react";
 import ResizeTextarea from "react-textarea-autosize";
 import { ReactComponent as Send } from "./send.svg";
 import { useCookies } from 'react-cookie';
@@ -40,8 +40,20 @@ const Chat = () => {
   const user = useRecoilValue(connectedUser);
   const chatDesc = useRecoilValue(selectedChat);
   const [message, setMessage] = useState("");
-  const [connection, setConnection] = useState( new W3CWebSocket("ws://localhost:5000"));
-  const [messages, setMessages] = useState([]);
+  const [connection, setConnection] = useState(new W3CWebSocket("ws://localhost:5000"));
+  const [messages, setMessages] = useRecoilState(allMessages);
+  const messagesEndRef = useRef(null)
+
+  // useEffect(() => {
+  // console.log("mes", messagesEndRef.current.scrollIntoView);
+  // messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  // }, [])
+
+  useEffect(() => {
+    if (messagesEndRef.current)
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+  }, [messagesEndRef.current, messages]);
+
   //setMessages(curr => { return [...curr, chat.success.messages] });
   /**
    * 
@@ -57,49 +69,61 @@ const Chat = () => {
    */
 
 
-  useEffect(() => {
-    connection.onopen = () => {
-      setConnection(connection);
+  // useEffect(() => {
+  //   connection.onopen = () => {
+  //     setConnection(connection);
 
-      // Identify to the websocket server
-      connection.send(JSON.stringify({
-        op: "IDENTIFY",
-        d: {
-          token: cookies.jwt
-        }
-      }))
+  //     // Identify to the websocket server
+  //     connection.send(JSON.stringify({
+  //       op: "IDENTIFY",
+  //       d: {
+  //         token: cookies.jwt
+  //       }
+  //     }))
 
-    }
+  //   }
 
-  }, []);
+  //   connection.onmessage = (m) => {
+  //     console.log(m.data)
+  //     const parsed = JSON.parse(m.data);
+  //     console.log(parsed)
 
-  connection.onmessage = (m) => {
-      console.log(m.data)
-      const parsed = JSON.parse(m.data);
-      console.log(parsed)
-      
-      switch (parsed.op) {
-        case "MESSAGE_CREATE":
-          setMessages(currentState => {
+  //     switch (parsed.op) {
+  //       case "MESSAGE_CREATE":
+  //         setMessages(currentState => {
 
-            return [...currentState, parsed.d.message];
-          });
+  //           return [...currentState, parsed.d.message];
+  //         });
 
-          break;
-        case "ERROR":
-          // there was an error with the websocket authentication
-          // let's just redirect to the homepage
-          connection.close();
-          document.location.href = "/"
-          break;
-        default:
-          console.log("unknown op")
-      }
-  }
+  //         break;
+  //       case "ERROR":
+  //         // there was an error with the websocket authentication
+  //         // let's just redirect to the homepage
+  //         connection.close();
+  //         document.location.href = "/"
+  //         break;
+  //       default:
+  //         console.log("unknown op")
+  //     }
+  //   }
+
+  // }, []);
+
+
 
   const sendMessage = async () => {
     await chatsActions.sendMessage('', { text: message }, chatDesc.chatId);
+
+    setMessages(curr => {
+      const userMessages = curr[chat.success.user._id] ? curr[chat.success.user._id] : [];
+      console.log(userMessages, message)
+      const messageFormated = { sender: user.userId, text: message, date: new Date(), seen: false };
+      return ({ ...curr, [chat.success.user._id]: [...userMessages, messageFormated] })
+    })
     setMessage("");
+    if (messagesEndRef.current)
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
+
   }
 
   return (
@@ -125,12 +149,12 @@ const Chat = () => {
             {chatDesc.username}
           </Text>
         </HStack>
-        <VStack h="85%" overflow="auto" w="100%">
+        <VStack h="85%" overflowY="auto" w="100%" overflowX="hidden">
           { /* chat.success.messages.map(message =>
             <Message sender={user.userId == message.sender} text={message.text} />
           ) */ }
-          {messages.map(message => <Message sender={user.userId == message.sender} text={message.text} />
-          )}
+          {chat.success && messages[chat.success.user._id] && messages[chat.success.user._id].map(message => <Message sender={user.userId == message.sender} text={message.text} />)}
+          <Box ref={messagesEndRef}></Box>
 
         </VStack>
       </Flex>

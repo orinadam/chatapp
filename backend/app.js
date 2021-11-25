@@ -130,7 +130,7 @@ app.post("/login", async (req, res) => {
 
     res.cookie("jwt", token, { httpOnly: false, maxAge: maxAge * 1000 });
     res.json({ success: { user: { username: user.username, profilePhoto: user.profilePhoto, id: user.id } } });
-  
+
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -138,13 +138,17 @@ app.post("/login", async (req, res) => {
 
 app.post("/chat", requireAuth, async (req, res) => {
   const { getterUsername } = req.body;
+
   const getterUser = await User.findOne({ username: getterUsername });
 
   if (getterUser && getterUser._id != req.userId) {
+
     const chat = await Chat.create({
       members: [req.userId, getterUser._id],
       messgaes: [],
     });
+
+    console.log(chat);
 
     res.json({ success: true });
   } else {
@@ -155,7 +159,9 @@ app.post("/chat", requireAuth, async (req, res) => {
 app.get("/chats", requireAuth, async (req, res) => {
   let lastMessageContent = ""
   const chats = await Chat.find({ members: req.userId }).populate("members").populate("messages");
+
   const filteredChats = chats.map((chat) => {
+    lastMessageContent = ""
     const user = chat.members.filter((member) => member._id != req.userId)[0];
     if (chat.messages && chat.messages.length) {
       const lastMessage = chat.messages[chat.messages.length - 1];
@@ -166,6 +172,9 @@ app.get("/chats", requireAuth, async (req, res) => {
       user: { id: user._id, username: user.username, photo: user.profilePhoto, lastMessage: lastMessageContent },
     };
   });
+
+  console.log(filteredChats);
+
   res.json({ success: filteredChats });
 });
 
@@ -175,7 +184,7 @@ app.get("/chats/:id", requireAuth, async (req, res) => {
       .populate("members")
       .populate("messages");
     const user = chat.members.filter((member) => member._id != req.userId)[0];
-    res.json({ success: { id: chat._id, username: user.username, messages: chat.messages } });
+    res.json({ success: { id: chat._id, username: user.username, messages: chat.messages, user: user } });
   } catch (e) {
     res.status(400).json({ error: "No such chat" });
   }
@@ -189,7 +198,7 @@ app.post("/chats/:id/messages", requireAuth, async (req, res) => {
       date: new Date(),
       seen: false,
     });
-    
+
     const chat = await Chat.findById(req.params.id);
     console.log(req.userId);
     console.log(req.chatters.size)

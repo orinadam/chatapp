@@ -7,7 +7,7 @@ import {
 } from "recoil";
 
 import { recoilPersist } from "recoil-persist";
-import {chatsActions} from "./ChatAppAPI"
+import { chatsActions } from "./ChatAppAPI"
 
 
 export const { persistAtom } = recoilPersist({});
@@ -20,13 +20,17 @@ export const selectedChat = atom({
   key: "selectedChat", // unique ID (with respect to other atoms/selectors)
   default: "", // default value (aka initial value)
 });
+export const allMessages = atom({
+  key: "allMessages",
+  default: {}
+})
 
 export const chatMessgesState = selector({
   key: "chatMessgesState",
   get: async ({ get }) => {
     const chatDesc = get(selectedChat);
     let chat = false
-    if(chatDesc !== ""){
+    if (chatDesc !== "") {
       console.log(chatDesc);
       chat = await chatsActions.getChat('/chats', chatDesc.chatId);
     }

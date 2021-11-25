@@ -10,19 +10,36 @@ import {
   Textarea,
   Button,
   VStack,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  Input,
+  Alert,
+  AlertIcon,
+  AlertTitle
 } from "@chakra-ui/react";
 import { MdAddCircle } from "react-icons/md";
 import { useState, useEffect, forwardRef, Suspense } from "react";
 import { chatsActions } from "./ChatAppAPI";
 import ChatIcon from "./ChatIcon";
 import { useHistory } from "react-router-dom";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { constSelector, useRecoilState, useRecoilValue } from "recoil";
 import ResizeTextarea from "react-textarea-autosize";
-import { chatMessgesState, selectedUser, connectedUser } from "./store";
+import { chatMessgesState, selectedUser, connectedUser, allMessages } from "./store";
 import { ReactComponent as Send } from "./send.svg";
 import Message from './Message'
 import { ErrorBoundary } from 'react-error-boundary'
 import Chat from './Chat';
+import { useCookies } from 'react-cookie';
+import { w3cwebsocket as W3CWebSocket } from "websocket";
+
+
+
 
 function ErrorFallback({ error, resetErrorBoundary }) {
   return (
@@ -35,10 +52,82 @@ function ErrorFallback({ error, resetErrorBoundary }) {
 }
 
 const Chats = () => {
+
   const chat = useRecoilValue(chatMessgesState);
   const [chats, setChats] = useState([]);
   const [user, setUser] = useRecoilState(connectedUser);
+  const [connection, setConnection] = useState(new W3CWebSocket("ws://localhost:5000"));
+  const [cookies, setCookie] = useCookies(['jwt']);
+  const [messages, setMessages] = useRecoilState(allMessages);
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [username, setUsername] = useState('');
+  const [error, setError] = useState(false);
+
   console.log(chat, 44)
+
+  const addChat = async () => {
+    try {
+      const resp = await chatsActions.createChat('/chat', { getterUsername: username });
+      onClose();
+    } catch (e) {
+      setError(true);
+
+    }
+
+  }
+
+  useEffect(() => {
+
+    console.log(messages)
+    connection.onopen = () => {
+      setConnection(connection);
+
+      // Identify to the websocket server
+      connection.send(JSON.stringify({
+        op: "IDENTIFY",
+        d: {
+          token: cookies.jwt
+        }
+      }))
+
+    }
+
+    connection.onmessage = (m) => {
+      const parsed = JSON.parse(m.data);
+      console.log(parsed)
+
+      switch (parsed.op) {
+        case "MESSAGE_CREATE":
+          setMessages(currentState => {
+            const senderId = parsed.d.message.sender;
+            const userMessages = currentState[senderId] ? currentState[senderId] : [];
+            return ({ ...currentState, [senderId]: [...userMessages, parsed.d.message] });
+          });
+
+          break;
+        case "ERROR":
+          // there was an error with the websocket authentication
+          // let's just redirect to the homepage
+          connection.close();
+          document.location.href = "/"
+          break;
+        default:
+          console.log("unknown op")
+        // setMessages(curr => [...curr, ])
+      }
+    }
+    console.log("abc", chat.success)
+    if (chat.success) {
+      console.log("sfahkasf")
+      const another_user = String(chat.success.user._id);
+      // setMessages(curr => [...curr, { String(chat.success.user._id) : chat.success.messages } ])
+      setMessages(curr => ({
+        ...curr,
+        [another_user]: chat.success.messages
+      }))
+    }
+
+  }, [chat]);
 
   const history = useHistory();
   useEffect(async () => {
@@ -91,16 +180,43 @@ const Chats = () => {
             {user.username}
           </Text>
           <Spacer />
-          <Icon as={MdAddCircle}></Icon>
+          <Icon as={MdAddCircle} onClick={onOpen}></Icon>
         </HStack>
-        {chats.map((chat) => {
+        {chats.map((chatComponent) => {
+          //console.log("sfk", chat.success ? messages[chat.success.user._id] : "ajsda", "sfhksfsfhkk", messages)
+          let lastUserMessage = "";
+          console.log(messages)
+          console.log(chatComponent.user.lastMessage, "1122")
+
+          if ((chatComponent.user.lastMessage && chatComponent.user.lastMessage.length > 0) || (messages[chatComponent.user.id] && messages[chatComponent.user.id].length > 0)) {
+            let userMessages = "";
+
+            if (chatComponent.user.lastMessage) {
+              userMessages = [chatComponent.user.lastMessage];
+            }
+
+            if (messages[chatComponent.user.id]) {
+              userMessages = messages[chatComponent.user.id];
+            }
+            lastUserMessage = userMessages[userMessages.length - 1];
+
+            console.log(lastUserMessage)
+
+            if ((messages[chatComponent.user.id]) && lastUserMessage.sender === user.userId) {
+              lastUserMessage = "You: " + lastUserMessage.text;
+            }
+            else if ((messages[chatComponent.user.id])) {
+              lastUserMessage = lastUserMessage.text;
+            }
+          }
+
           return (
             <ErrorBoundary FallbackComponent={ErrorFallback}>
               <Suspense fallback={<div>Loading...</div>}>
                 <ChatIcon
-                  chatId={chat.id}
-                  username={chat.user.username}
-                  lastMessage={chat.user.lastMessage}
+                  chatId={chatComponent.id}
+                  username={chatComponent.user.username}
+                  lastMessage={lastUserMessage}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -149,6 +265,38 @@ const Chats = () => {
 
           </VStack>
       </Flex> */}
+
+
+
+
+        <Modal isOpen={isOpen} onClose={onClose}>
+          <ModalOverlay />
+          <ModalContent>
+            <ModalHeader>Add Chat</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody>
+              <Input placeholder="Username" variant="filled" onChange={(e) => setUsername(e.target.value)}></Input>
+              {error && (
+                <Alert status="error" mb={7}>
+                  <AlertIcon />
+                  <AlertTitle mr={2}>Invalid username or password</AlertTitle>
+                </Alert>
+              )}
+            </ModalBody>
+
+            <ModalFooter>
+              <Button colorScheme="blue" mr={3} onClick={onClose}>
+                Close
+              </Button>
+              <Button variant="ghost" bg="whatsapp.300" color="whitesmoke" onClick={addChat}>Secondary Action</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+
+
+
+
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <Suspense fallback={<div>Loading...</div>}>
             {chat &&
@@ -156,6 +304,7 @@ const Chats = () => {
             }
           </Suspense>
         </ErrorBoundary>
+
       </VStack>
     </HStack>
   );
