@@ -200,18 +200,27 @@ app.post("/chats/:id/messages", requireAuth, async (req, res) => {
     });
 
     const chat = await Chat.findById(req.params.id);
-    console.log(req.userId);
-    console.log(req.chatters.size)
-    console.log(chat.members)
-    console.log(chat.members.find(s => s._id !== req.userId))
+
     const chatter = req.chatters.get(String(chat.members.find(s => String(s._id) !== req.userId)));
+    const sender = req.chatters.get(req.userId);
+
+    sender.connection.send(JSON.stringify({
+        op: "MESSAGE_CREATE",
+        d: {
+          message: message,
+          reciever: String(chat.members.find(s => String(s._id) !== req.userId))
+        }
+      }));
+ 
     if (chatter) {
       chatter.connection.send(JSON.stringify({
         op: "MESSAGE_CREATE",
         d: {
-          message: message
+          message: message,
+          reciever: ""
         }
       }));
+      
     }
 
     // new Map;
@@ -244,17 +253,41 @@ app.post("/chats/:id/messages", requireAuth, async (req, res) => {
 });
 
 app.delete("/chats/:id/messages/:messageId", requireAuth, async (req, res) => {
+  console.log("Iam here!!!!!!!!!!!!!!!!!!!!")
   const { id, messageId } = req.params;
+  console.log(id, messageId, "fjsfjfsjksjfksfjkfjekj")
+  const messageInfo = await Message.findById(messageId);
+  if(messageInfo.sender !== req.userId) res.json({error: "cant delete this message"});
   const chat = await Chat.findByIdAndUpdate(id, {
     $pull: { messages: messageId },
   });
   const message = await Message.findByIdAndDelete(messageId);
   if (!chat) {
-    res.send("no such chat");
+    res.json({error: "no such chat"});
   } else if (!message) {
-    res.send("no such message");
+    res.json({error: "no such message"});
   } else {
-    res.send("worked");
+      const chatter = req.chatters.get(String(chat.members.find(s => String(s._id) !== req.userId)));
+      const sender = req.chatters.get(req.userId);
+      sender.connection.send(JSON.stringify({
+        op: "MESSAGE_DELETE",
+        d: {
+          message: messageInfo,
+          reciever: String(chat.members.find(s => String(s._id) !== req.userId))
+        }
+      }));
+      if(chatter){
+
+        chatter.connection.send(JSON.stringify({
+        op: "MESSAGE_DELETE",
+        d: {
+          message: messageInfo,
+          reciever: ""
+        }
+      }));
+
+      }
+    res.json({success: true});
   }
 });
 

@@ -99,12 +99,31 @@ const Chats = () => {
       switch (parsed.op) {
         case "MESSAGE_CREATE":
           setMessages(currentState => {
-            const senderId = parsed.d.message.sender;
+            console.log(parsed.d.reciever, "====")
+            const senderId = (parsed.d.message.sender == user.userId) ? parsed.d.reciever : parsed.d.message.sender;
             const userMessages = currentState[senderId] ? currentState[senderId] : [];
+            console.log("here ", {[senderId]: [...userMessages, parsed.d.message]});
             return ({ ...currentState, [senderId]: [...userMessages, parsed.d.message] });
           });
 
           break;
+
+        case "MESSAGE_DELETE":
+          console.log(parsed.d.message, "Deleting????")
+          setMessages(currentState => {
+            const senderId = (parsed.d.message.sender == user.userId) ? parsed.d.reciever : parsed.d.message.sender;
+            const userMessages = currentState[senderId] ? currentState[senderId] : [];
+            console.log("MEsgagsahsg", userMessages);
+            if(userMessages.length > 0){
+              const filteredUserMessages = userMessages.filter(userMessage => userMessage._id !== parsed.d.message._id);
+              console.log("FIlteredddd", filteredUserMessages)
+              return ({ ...currentState, [senderId]: filteredUserMessages });
+            }
+            return ({ ...currentState });
+          });
+
+          break;
+
         case "ERROR":
           // there was an error with the websocket authentication
           // let's just redirect to the homepage
@@ -146,6 +165,7 @@ const Chats = () => {
       justifyContent="left"
       direction="column"
       bg="gray.100"
+      
     >
       <Flex
         height="100vh"
@@ -153,7 +173,7 @@ const Chats = () => {
         w="25%"
         justifyContent="left"
         bg="gray.200"
-        overflow="auto"
+        
         direction="column"
       >
         <Heading mb={3}>ChatApp</Heading>
@@ -223,7 +243,7 @@ const Chats = () => {
           );
         })}
       </Flex>
-      <VStack w="79%" h="100%">
+      <VStack w="79%" h="100%" >
         {/*<Flex h={690} bg="gray.200" w="100%" border="3px solid gray.500" borderRadius={10, 0, 0, 0} display="column">
         <HStack w="100%" h="10%" bg="gray.300">
         <Avatar

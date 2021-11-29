@@ -114,12 +114,12 @@ const Chat = () => {
   const sendMessage = async () => {
     await chatsActions.sendMessage('', { text: message }, chatDesc.chatId);
 
-    setMessages(curr => {
-      const userMessages = curr[chat.success.user._id] ? curr[chat.success.user._id] : [];
-      console.log(userMessages, message)
-      const messageFormated = { sender: user.userId, text: message, date: new Date(), seen: false };
-      return ({ ...curr, [chat.success.user._id]: [...userMessages, messageFormated] })
-    })
+    // setMessages(curr => {
+    //   const userMessages = curr[chat.success.user._id] ? curr[chat.success.user._id] : [];
+    //   console.log(userMessages, message)
+    //   const messageFormated = { sender: user.userId, text: message, date: new Date(), seen: false };
+    //   return ({ ...curr, [chat.success.user._id]: [...userMessages, messageFormated] })
+    // })
     setMessage("");
     if (messagesEndRef.current)
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" })
@@ -153,7 +153,7 @@ const Chat = () => {
           { /* chat.success.messages.map(message =>
             <Message sender={user.userId == message.sender} text={message.text} />
           ) */ }
-          {chat.success && messages[chat.success.user._id] && messages[chat.success.user._id].map(message => <Message sender={user.userId == message.sender} text={message.text} />)}
+          {chat.success && messages[chat.success.user._id] && messages[chat.success.user._id].map(message => <Message id={message._id} chatId={chat.success.id} sender={user.userId == message.sender} text={message.text} />)}
           <Box ref={messagesEndRef}></Box>
 
         </VStack>
