@@ -25,8 +25,9 @@ const chatsActions = {
   sendMessage: (url, body, id) => requests.post(`/chats/${id}/messages`, body),
   deleteMessage: (url, chatId, messageId) =>
     requests.delete(`/chats/${chatId}/messages/${messageId}`),
-  searchChat: (url, parameter) => requests.get(`/chats/search?${parameter}`),
+  searchChat: (url, parameter) =>
+    requests.get(`/chats/search?name=${parameter}`),
   deleteChats: (url, chatId) => requests.delete(`/chats/${chatId}`),
 };
 
-export {auth, chatsActions};
+export { auth, chatsActions };
