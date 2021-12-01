@@ -9,6 +9,7 @@ import ProtectedRoute from "./ProtectedRoute";
 import {CookiesProvider} from "react-cookie"
 import {ErrorBoundary} from 'react-error-boundary'
 import { useState, useEffect, forwardRef, Suspense, Fragment } from "react";
+import Signup from './Signup'
 
 function ErrorFallback({error, resetErrorBoundary}) {
   return (
@@ -27,6 +28,9 @@ function App() {
       <RecoilRoot>
         <Route exact path="/login">
           <Login />
+        </Route>
+        <Route exact path="/signup">
+          <Signup />
         </Route>
         <ErrorBoundary FallbackComponent={ErrorFallback}>
             <Suspense fallback={<div>Loading...</div>}>

@@ -5,12 +5,15 @@ import {
   Input,
   Button,
   Alert,
+  Text,
   AlertIcon,
   AlertTitle,
   AlertDescription,
   CloseButton,
   FormControl,
 } from "@chakra-ui/react";
+
+import { Link } from "react-router-dom";
 
 import { useRecoilState, useRecoilCallback } from "recoil";
 
@@ -37,13 +40,14 @@ const Login = () => {
         profilePhoto: resp.success.user.profilePhoto,
         username: resp.success.user.username,
       });
-      history.push("/chats");
+      document.location.href="/chats";
+
     } catch (e) {
       setError(true);
     }
   });
   return (
-    <Flex height="100vh" alignItems="center" justifyContent="center">
+    <Flex height="100vh" alignItems="center" justifyContent="center" direction="column">
       <Flex
         direction="column"
         background="gray.100"
@@ -82,6 +86,7 @@ const Login = () => {
           Login
         </Button>
       </Flex>
+      <Link to="/signup"><Text color="gray.500" marginTop={3}>Not signed up already? Signup</Text></Link>
     </Flex>
   );
 };

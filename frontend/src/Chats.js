@@ -149,6 +149,7 @@ const Chats = () => {
           break;
         case "CHAT_DELETE":
           setChats((curr) => parsed.d.chats);
+          window.location.reload(false);
 
           break;
         case "CHAT_CREATE":

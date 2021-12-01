@@ -12,7 +12,9 @@ import { Box, Text, HStack, Spacer, Flex,  Menu,
  import { chatsActions } from "./ChatAppAPI";
 
  const copyToClipboard = (text) =>{
-     navigator.clipboard.writeText(text);
+     if(text){
+        navigator.clipboard.writeText(text);
+     }
  }
 
  const deleteMessage = async (chatId, id) => {
